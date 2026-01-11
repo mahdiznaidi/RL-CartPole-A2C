@@ -1,0 +1,41 @@
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+*.pyc
+*.pyo
+*.pyd
+
+# Virtual environment
+.venv/
+env/
+venv/
+ENV/
+
+# Jupyter Notebooks checkpoints
+.ipynb_checkpoints/
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Logs and outputs
+*.log
+outputs/figures/
+outputs/runs/
+
+# VS Code settings
+.vscode/
+
+# Python packages
+*.egg-info/
+dist/
+build/
+
+# Optional: data / large files you don’t want to push
+data/
+*.h5
+*.pt
+*.ckpt
+*.tar
