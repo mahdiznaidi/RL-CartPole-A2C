@@ -114,3 +114,23 @@ class CSVLogger:
 
 def get_run_dir(project_root: Path, agent_id: str, seed: int) -> Path:
     return project_root / "outputs" / "runs" / agent_id / f"seed{seed}"
+
+
+class Logger:
+    """
+    Compatibility wrapper expected by training code.
+    """
+
+    def __init__(self, run_dir: Path, config: Any):
+        self._csv = CSVLogger(run_dir)
+        self._csv.save_config(config)
+
+    def log_train(self, step: int, metrics: Dict[str, Any]) -> None:
+        row = dict(metrics)
+        row.setdefault("step", step)
+        self._csv.log_train(row)
+
+    def log_eval(self, step: int, metrics: Dict[str, Any]) -> None:
+        row = dict(metrics)
+        row.setdefault("step", step)
+        self._csv.log_eval(row)
