@@ -11,7 +11,7 @@ from typing import Dict, Tuple, Optional
 from src.models import ActorNetwork, CriticNetwork
 from src.utils import to_tensor, to_numpy
 from .buffer import RolloutBuffer
-from .returns import compute_returns_1step, compute_returns_nstep
+from .returns import compute_returns_1step, compute_returns_nstep, compute_returns_nstep_grouped
 from .losses import compute_actor_loss, compute_critic_loss, compute_entropy
 
 
@@ -179,15 +179,27 @@ class A2CAgent:
                 gamma=self.config.gamma
             ).to(self.device)
         else:
-            targets = compute_returns_nstep(
-                rewards=rewards,
-                values=values,
-                next_values=next_values,
-                dones=data['dones'],
-                truncated=data['truncated'],
-                gamma=self.config.gamma,
-                n_steps=self.config.n_steps
-            ).to(self.device)
+            if 'env_ids' in data and data['env_ids']:
+                targets = compute_returns_nstep_grouped(
+                    rewards=rewards,
+                    values=values,
+                    next_values=next_values,
+                    dones=data['dones'],
+                    truncated=data['truncated'],
+                    gamma=self.config.gamma,
+                    n_steps=self.config.n_steps,
+                    env_ids=data['env_ids'],
+                ).to(self.device)
+            else:
+                targets = compute_returns_nstep(
+                    rewards=rewards,
+                    values=values,
+                    next_values=next_values,
+                    dones=data['dones'],
+                    truncated=data['truncated'],
+                    gamma=self.config.gamma,
+                    n_steps=self.config.n_steps
+                ).to(self.device)
         
         # Compute advantages
         with torch.no_grad():

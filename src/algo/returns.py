@@ -5,7 +5,7 @@ This is CRITICAL - correct bootstrapping is essential!
 """
 
 import torch
-from typing import List
+from typing import List, Dict
 
 
 def compute_returns_1step(
@@ -90,7 +90,8 @@ def compute_returns_nstep(
     - Position n-1: uses rewards[n-1] + bootstrap from next_values[n-1]
     
     CRITICAL: Handle episode boundaries correctly!
-    If episode ends before n steps, use actual rewards until end.
+    - Termination: stop accumulating rewards, no bootstrap
+    - Truncation: stop accumulating rewards, bootstrap from next value
     
     Args:
         rewards: List of rewards collected in this rollout
@@ -117,39 +118,88 @@ def compute_returns_nstep(
         # Compute n-step return starting from position i
         G = 0.0
         discount = 1.0
-        
+        bootstrap_value = None
+
         # Look ahead up to n steps (or until end of data)
         steps_ahead = min(n_steps, num_steps - i)
-        
+
         # Accumulate discounted rewards
-        episode_ended = False
         for j in range(steps_ahead):
             idx = i + j
             G += discount * rewards[idx]
             discount *= gamma
-            
-            # Check if episode ended (terminal, not truncated)
-            if dones[idx] and not truncated[idx]:
-                episode_ended = True
+
+            # Truncation: stop accumulating but bootstrap from next value
+            if truncated[idx]:
+                bootstrap_value = next_values[idx].item()
                 break
-        
-        # Bootstrap from value function if episode didn't end
-        if not episode_ended:
+
+            # Termination: stop accumulating, no bootstrap
+            if dones[idx]:
+                bootstrap_value = None
+                break
+
+        # Bootstrap if we didn't hit a terminal state
+        if bootstrap_value is None and (j == steps_ahead - 1) and not (dones[idx] and not truncated[idx]):
             if i + steps_ahead < num_steps:
                 # Bootstrap from value at position i + steps_ahead
                 bootstrap_value = values[i + steps_ahead].item()
             else:
-                # At the end of rollout, use next_value of last step
-                bootstrap_value = next_values[-1].item()
-                
-                # But only if last step wasn't terminal
+                # At the end of rollout, use next_value of last step if not terminal
                 if dones[-1] and not truncated[-1]:
-                    bootstrap_value = 0.0
-            
+                    bootstrap_value = None
+                else:
+                    bootstrap_value = next_values[-1].item()
+
+        if bootstrap_value is not None:
             G += discount * bootstrap_value
-        
+
         targets[i] = G
     
+    return targets
+
+
+def compute_returns_nstep_grouped(
+    rewards: List[float],
+    values: torch.Tensor,
+    next_values: torch.Tensor,
+    dones: List[bool],
+    truncated: List[bool],
+    gamma: float,
+    n_steps: int,
+    env_ids: List[int],
+) -> torch.Tensor:
+    """
+    Compute n-step returns grouped per environment.
+
+    This avoids mixing transitions from different workers when K>1.
+    """
+    num_steps = len(rewards)
+    targets = torch.zeros(num_steps)
+
+    env_to_indices: Dict[int, List[int]] = {}
+    for idx, env_id in enumerate(env_ids):
+        env_to_indices.setdefault(env_id, []).append(idx)
+
+    for env_id, indices in env_to_indices.items():
+        seq_rewards = [rewards[i] for i in indices]
+        seq_values = values[indices]
+        seq_next_values = next_values[indices]
+        seq_dones = [dones[i] for i in indices]
+        seq_truncated = [truncated[i] for i in indices]
+
+        seq_targets = compute_returns_nstep(
+            rewards=seq_rewards,
+            values=seq_values,
+            next_values=seq_next_values,
+            dones=seq_dones,
+            truncated=seq_truncated,
+            gamma=gamma,
+            n_steps=n_steps,
+        )
+        for local_idx, global_idx in enumerate(indices):
+            targets[global_idx] = seq_targets[local_idx]
+
     return targets
 
 

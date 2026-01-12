@@ -3,6 +3,7 @@ Environment factory functions
 """
 
 import gymnasium as gym
+from gymnasium.vector import AutoresetMode
 from typing import Optional, Callable
 from .wrappers import StochasticRewardWrapper, BootstrappingInfoWrapper
 
@@ -84,10 +85,10 @@ def make_vec_env(
     # Create vectorized environment
     if async_envs and num_envs > 1:
         # Async: faster but more complex
-        envs = gym.vector.AsyncVectorEnv(env_fns)
+        envs = gym.vector.AsyncVectorEnv(env_fns, autoreset_mode=AutoresetMode.SAME_STEP)
     else:
         # Sync: simpler and deterministic
-        envs = gym.vector.SyncVectorEnv(env_fns)
+        envs = gym.vector.SyncVectorEnv(env_fns, autoreset_mode=AutoresetMode.SAME_STEP)
     
     return envs
 

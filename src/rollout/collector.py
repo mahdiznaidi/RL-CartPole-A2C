@@ -93,7 +93,8 @@ class RolloutCollector:
                     next_state=next_states[env_idx],
                     done=terminated[env_idx],
                     truncated=truncated[env_idx],
-                    log_prob=log_probs[env_idx]
+                    log_prob=log_probs[env_idx],
+                    env_id=env_idx,
                 )
             
             # Update current states
