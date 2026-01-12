@@ -11,7 +11,7 @@ class RolloutBuffer:
     """
     Buffer for storing rollout data during collection
     
-    Stores: states, actions, rewards, next_states, dones, truncated, log_probs
+    Stores: states, actions, rewards, next_states, dones, truncated, log_probs, env_ids
     
     Example:
         >>> buffer = RolloutBuffer()
@@ -28,6 +28,7 @@ class RolloutBuffer:
         self.dones = []
         self.truncated = []
         self.log_probs = []
+        self.env_ids = []
     
     def push(
         self,
@@ -37,7 +38,8 @@ class RolloutBuffer:
         next_state: np.ndarray,
         done: bool,
         truncated: bool,
-        log_prob: float
+        log_prob: float,
+        env_id: int = 0
     ) -> None:
         """
         Add one transition to the buffer
@@ -58,6 +60,7 @@ class RolloutBuffer:
         self.dones.append(done)
         self.truncated.append(truncated)
         self.log_probs.append(log_prob)
+        self.env_ids.append(env_id)
     
     def get(self) -> Dict[str, Any]:
         """
@@ -65,7 +68,7 @@ class RolloutBuffer:
         
         Returns:
             Dictionary with keys: states, actions, rewards, next_states, 
-                                 dones, truncated, log_probs
+                                 dones, truncated, log_probs, env_ids
             Each value is a list
         """
         return {
@@ -76,6 +79,7 @@ class RolloutBuffer:
             'dones': self.dones,
             'truncated': self.truncated,
             'log_probs': self.log_probs,
+            'env_ids': self.env_ids,
         }
     
     def clear(self) -> None:
@@ -87,6 +91,7 @@ class RolloutBuffer:
         self.dones = []
         self.truncated = []
         self.log_probs = []
+        self.env_ids = []
     
     def __len__(self) -> int:
         """Return number of transitions in buffer"""

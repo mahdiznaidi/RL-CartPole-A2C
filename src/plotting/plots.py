@@ -40,3 +40,14 @@ def plot_losses(actor: Optional[AggregatedCurve], critic: Optional[AggregatedCur
     plt.ylabel("loss")
     plt.legend()
     _save(out_path)
+
+
+def plot_value_trajectory(curve: AggregatedCurve, title: str, out_path: Path) -> None:
+    plt.figure()
+    plt.plot(curve.step, curve.mean, label="mean")
+    plt.fill_between(curve.step, curve.min_, curve.max_, alpha=0.2, label="min/max")
+    plt.title(title)
+    plt.xlabel("step in episode")
+    plt.ylabel("value")
+    plt.legend()
+    _save(out_path)

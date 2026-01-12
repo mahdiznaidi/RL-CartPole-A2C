@@ -49,19 +49,19 @@ class AgentConfig(DefaultConfig):
             # Agent 2: K=6 parallel workers
             self.num_workers = 6
             self.n_steps = 1
-            self.reward_mask_prob = 0.9
+            self.reward_mask_prob = 0.0
             
         elif self.agent_id == 3:
             # Agent 3: n=6 step returns
             self.num_workers = 1
             self.n_steps = 6
-            self.reward_mask_prob = 0.9
+            self.reward_mask_prob = 0.0
             
         elif self.agent_id == 4:
-            # Agent 4: K=6 × n=6 combined
+            # Agent 4: K=6 x n=6 combined
             self.num_workers = 6
             self.n_steps = 6
-            self.reward_mask_prob = 0.9
+            self.reward_mask_prob = 0.0
         
         # Set experiment name if not provided
         if self.experiment_name is None:
